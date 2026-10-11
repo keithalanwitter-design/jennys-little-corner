@@ -8,6 +8,7 @@ import { Icon } from "@/components/Icons";
 import { Loading, Stagger, Item, Scale } from "@/components/ui";
 import { moods } from "@/lib/content";
 import { recipes } from "@/lib/recipes";
+import NextStep from "@/components/NextStep";
 
 type Phase = "morning" | "afternoon" | "evening" | "night";
 const phaseOf = (h: number): Phase => (h < 5 ? "night" : h < 12 ? "morning" : h < 17 ? "afternoon" : h < 21 ? "evening" : "night");
@@ -52,6 +53,15 @@ export default function Today() {
           </div>
         </section>
       </Item>
+
+      <Item><NextStep /></Item>
+
+      {new Date().getDay() === 0 && !data.checkins.some((c) => c.weekOf === today()) && (
+        <Item><Link href="/checkin" className="card flex items-center gap-4 !bg-gradient-to-br from-plum/25 to-clay/20">
+          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-surface text-plum"><Icon name="calendar" /></div>
+          <div className="flex-1"><div className="font-display text-lg font-semibold">Sunday check-in</div><div className="text-sm text-muted">2 minutes: look back, plan one small tweak.</div></div><Icon name="skip" size={16} />
+        </Link></Item>
+      )}
 
       {!p.onboarded && (
         <Item><Link href="/onboarding" className="card flex items-center gap-4 !bg-gradient-to-br from-honey/30 to-clay/20">

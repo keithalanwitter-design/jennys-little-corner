@@ -4,11 +4,11 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { Icon } from "./Icons";
 import { Wordmark } from "./Brand";
-const main = [["/", "today", "Today"], ["/nourish", "nourish", "Nourish"], ["/move", "move", "Move"], ["/unwind", "unwind", "Unwind"], ["/more", "more", "More"]] as const;
-const extra = [["/progress", "progress", "Progress"], ["/journal", "journal", "Journal & Wins"], ["/supplements", "pill", "Supplements"], ["/settings", "settings", "Settings"]] as const;
+const main = [["/", "today", "Today"], ["/nourish", "nourish", "Nourish"], ["/move", "move", "Move"], ["/coach", "sparkle", "Coach"], ["/more", "more", "More"]] as const;
+const extra = [["/unwind", "unwind", "Unwind"], ["/meds", "pill", "Medications"], ["/checkin", "calendar", "Weekly check-in"], ["/progress", "progress", "Progress"], ["/journal", "journal", "Journal & Wins"], ["/supplements", "leaf", "Supplements"], ["/settings", "settings", "Settings"]] as const;
 export default function Nav() {
   const p = usePathname().replace(/(.)\/$/, "$1");
-  if (p === "/onboarding") return null;
+  if (p === "/onboarding" || p === "/checkin") return null;
   const active = (h: string) => h === p || (h === "/more" && extra.some(([e]) => e === p));
   return (
     <>

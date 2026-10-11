@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { db } from "./db";
+import { queueSync } from "./sync";
 import type { AppData, DailyLog } from "./types";
 export const ymd = (d: Date) => d.toLocaleDateString("en-CA");
 export const today = () => ymd(new Date());
@@ -12,6 +13,7 @@ export const defaults: AppData = {
   goals: [], logs: {}, supplements: [], suppLogs: [], pantry: [], grocery: [], workouts: [],
   favorites: [], mealPlan: {}, journal: [], wins: [], measurements: [], prep: { recipeIds: [], servings: {}, day: "Sunday" },
   routineLevels: {}, selfCareFavs: [], customSelfCare: [],
+  meds: [], doseLogs: [], checkins: [], chat: [], nextSkips: {}, nextDone: {},
   reminders: [
     { id: "water-am", label: "Morning water", time: "08:00", enabled: false },
     { id: "water-mid", label: "Midday water", time: "13:00", enabled: false },
@@ -19,6 +21,7 @@ export const defaults: AppData = {
     { id: "supps-am", label: "Morning supplements", time: "09:00", enabled: false },
     { id: "supps-pm", label: "Evening supplements", time: "20:00", enabled: false },
     { id: "prep", label: "Sunday prep session", time: "15:00", enabled: false, days: [0] },
+    { id: "checkin", label: "Sunday weekly check-in", time: "18:00", enabled: false, days: [0] },
     { id: "wind", label: "Evening wind-down", time: "21:00", enabled: false },
     { id: "journal", label: "Three good things", time: "21:30", enabled: false },
   ],
@@ -32,6 +35,9 @@ const migrate = (d: Partial<AppData> | null): AppData => {
   return m;
 };
 let cache: AppData | null = null;
+export const migrateData = (d: Partial<AppData> | null) => migrate(d);
+export function replaceData(d: AppData) { cache = migrate(d); db.save(cache); subs.forEach((f) => f(cache!)); }
+export const peek = () => cache;
 const subs = new Set<(d: AppData) => void>();
 export function useData() {
   const [data, setData] = useState<AppData | null>(cache);
@@ -42,7 +48,7 @@ export function useData() {
     return () => { subs.delete(setData); };
   }, []);
   const update = useCallback((fn: (d: AppData) => AppData) => {
-    if (!cache) return; cache = fn(cache); db.save(cache); subs.forEach((f) => f(cache!));
+    if (!cache) return; cache = { ...fn(cache), updatedAt: new Date().toISOString() }; db.save(cache); queueSync(cache); subs.forEach((f) => f(cache!));
   }, []);
   return { data, update };
 }

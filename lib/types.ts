@@ -18,9 +18,14 @@ export type JournalEntry = { id: string; date: string; text: string; gratitude: 
 export type Win = { id: string; date: string; text: string; kind: string };
 export type Measurement = { date: string; weight?: number; waist?: number; hips?: number; note?: string };
 export type PrepPlan = { recipeIds: string[]; servings: Record<string, number>; day: string };
+export type Med = { id: string; name: string; dose: string; times: string[]; withFood: boolean; notes?: string; stock?: number; perDose?: number; prescriber?: string; asNeeded?: boolean; active: boolean; createdAt?: string };
+export type DoseLog = { id: string; date: string; medId: string; time: string; status: "taken" | "skipped"; at: string; source?: "app" | "push" };
+export type CheckIn = { id: string; weekOf: string; wentWell: string[]; hard: string[]; note?: string; tweak?: string; applied?: string[]; at: string };
+export type ChatMsg = { id: string; role: "user" | "assistant"; text: string; at: string; actions?: { label: string; kind: "grocery" | "plan"; payload: string[] }[] };
 export type AppData = {
   profile: Profile; goals: Goal[]; logs: Record<string, DailyLog>; supplements: Supplement[]; suppLogs: SuppLog[];
   pantry: string[]; grocery: GroceryItem[]; reminders: Reminder[]; workouts: WorkoutLog[];
   favorites: string[]; mealPlan: MealPlan; journal: JournalEntry[]; wins: Win[]; measurements: Measurement[];
+  meds: Med[]; doseLogs: DoseLog[]; checkins: CheckIn[]; chat: ChatMsg[]; nextSkips: Record<string, string[]>; nextDone: Record<string, string[]>; updatedAt?: string;
   prep: PrepPlan; routineLevels: Record<string, number>; selfCareFavs: string[]; customSelfCare: string[];
 };

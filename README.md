@@ -12,6 +12,7 @@ A private, mobile-first wellness web app (installable PWA). There are no shame s
 - **Progress:** recharts trends for water, protein, movement, energy and stress, and sleep; optional private measurements.
 - **Journal & Little Wins:** prompts, three good things, a win jar, milestones that never reset.
 - **Supplements:** your own lineup grouped by morning, midday and evening, check-offs, refill countdown, info cards with a doctor/pharmacist note.
+- **v3:** a Next Step card (one action at a time, in schedule order), a Coach chat (AI via Supabase Edge Function, smart local fallback), Medications (separate from supplements, with gentle missed-dose handling, refills and history), and a Sunday weekly check-in that adjusts next week.
 - **Settings:** theme, optional targets, 8 reminders (browser notifications), export, import and delete.
 
 Data lives in `localStorage` (via `lib/db.ts`, a swappable adapter). `supabase/schema.sql` holds the planned Supabase schema with Row Level Security.
@@ -22,6 +23,9 @@ npm install
 npm run dev     # http://localhost:3000/jennys-little-corner/
 npm run build   # static site in out/  (npx serve out)
 ```
+
+## Sync, AI coach & push reminders (optional)
+See **[SETUP.md](SETUP.md)** for the step-by-step Supabase setup: magic-link sign-in, offline-first sync, the AI coach Edge Function, and Web Push with Taken/Snooze actions. Without it, the app runs fully on-device, with a local rule-based coach.
 
 ## Live site
 https://keithalanwitter-design.github.io/jennys-little-corner/ (GitHub Pages, deployed by `.github/workflows/pages.yml` on every push to `main`).

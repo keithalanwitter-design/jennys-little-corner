@@ -6,6 +6,7 @@ import { BASE } from "@/lib/base";
 import { notify } from "@/lib/reminders";
 import { PageHeader, Loading } from "@/components/ui";
 import { Icon } from "@/components/Icons";
+import Account from "@/components/Account";
 
 export default function Settings() {
   const { data, update } = useData();
@@ -47,8 +48,9 @@ export default function Settings() {
               <span className="flex-1 text-sm font-semibold">{r.label}{r.days && <span className="block text-xs font-normal text-muted">Sundays</span>}</span>
               <input type="time" className="rounded-xl bg-surface px-2 py-1.5 text-sm font-semibold ring-1 ring-line" value={r.time} onChange={(e) => update((d) => ({ ...d, reminders: d.reminders.map((x) => x.id === r.id ? { ...x, time: e.target.value } : x) }))} />
             </li>))}</ul>
-          <p className="mt-3 text-xs text-muted">For now, reminders arrive while the app is open or running in the background. Push notifications for when it&apos;s fully closed are planned.</p>
+          <p className="mt-3 text-xs text-muted">For now, reminders arrive while the app is open or running in the background. Sign in under Account & sync to get reminders even when the app is closed.</p>
         </section>
+        <Account />
         <section className="card lg:col-span-2">
           <h2 className="h2 mb-1">Your data</h2>
           <p className="mb-3 text-sm text-muted">Everything stays on this device. Nothing is shared with anyone, ever, unless you choose to.</p>

@@ -1,0 +1,17 @@
+project_id = "jennys-little-corner"
+
+[auth]
+site_url = "https://keithalanwitter-design.github.io/jennys-little-corner/"
+additional_redirect_urls = ["https://keithalanwitter-design.github.io/jennys-little-corner/settings/", "http://localhost:3000/jennys-little-corner/settings/"]
+
+[auth.email]
+enable_signup = true
+
+[functions.coach]
+verify_jwt = true
+
+[functions.push-send]
+verify_jwt = false
+
+[functions.push-action]
+verify_jwt = false

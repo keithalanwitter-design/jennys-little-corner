@@ -4,9 +4,12 @@ import { PageHeader, Stagger, Item } from "@/components/ui";
 import { Icon } from "@/components/Icons";
 import { Calf } from "@/components/Brand";
 const links = [
+  ["/unwind", "unwind", "Unwind", "Breathing, me time, sleep & wind-down", "from-sky to-[#5e7f95]"],
+  ["/meds", "pill", "Medications", "Schedule, gentle reminders, refills, history", "from-plum to-blush"],
+  ["/checkin", "calendar", "Weekly check-in", "2 minutes: look back, one small tweak", "from-plum to-clay"],
   ["/progress", "progress", "Progress & insights", "Water, protein, movement, energy and sleep trends", "from-sky to-sage"],
   ["/journal", "journal", "Journal & little wins", "Gratitude, reflections and milestones", "from-honey to-clay"],
-  ["/supplements", "pill", "Supplements", "Your schedule, check-offs and refills", "from-sage to-moss"],
+  ["/supplements", "leaf", "Supplements", "Your schedule, check-offs and refills", "from-sage to-moss"],
   ["/onboarding", "sparkle", "Goals & preferences", "Change anything you've told the app", "from-plum to-blush"],
   ["/settings", "settings", "Settings & reminders", "Theme, notifications, your data", "from-clay to-terra"],
 ];
