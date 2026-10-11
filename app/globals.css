@@ -1,16 +1,57 @@
 @import "tailwindcss";
-@theme {
-  --color-cream: #fbf6ef;
-  --color-sand: #efe4d4;
-  --color-clay: #c97b5a;
-  --color-sage: #7f9c86;
-  --color-ink: #3d342e;
-  --color-sky: #8fb3c9;
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg: #f8f4ec; --surface: #fffdf9; --surface-2: #efe8db; --ink: #3b332c; --muted: #85786a; --line: #e6dccb;
+  --clay: #c9825f; --terra: #a85b3d; --sage: #889783; --moss: #5e715e; --honey: #e2b866; --sky: #8fb2c6; --blush: #e8c4b4; --plum: #7a5c74;
+  --glow-a: #f6d9b8; --glow-b: #f3e6d3;
 }
-body { background: var(--color-cream); color: var(--color-ink); font-family: ui-rounded, "Nunito", system-ui, sans-serif; }
-.card { @apply rounded-3xl bg-white/80 p-4 shadow-sm ring-1 ring-sand; }
-.btn { @apply rounded-2xl bg-clay px-4 py-3 font-semibold text-white active:scale-95 transition; }
-.btn-soft { @apply rounded-2xl bg-sand px-4 py-2 font-medium text-ink active:scale-95 transition; }
-.input { @apply w-full rounded-xl border border-sand bg-white px-3 py-2; }
-.chip { @apply whitespace-nowrap rounded-full border border-sand px-3 py-1 text-sm; }
-.chip-on { @apply whitespace-nowrap rounded-full border border-sage bg-sage px-3 py-1 text-sm text-white; }
+.dark {
+  --bg: #1d1a17; --surface: #27231f; --surface-2: #322c26; --ink: #f1e9dd; --muted: #b3a593; --line: #3d362f;
+  --clay: #d8916d; --terra: #e0a07f; --sage: #9fae99; --moss: #a9bba5; --honey: #e8c47c; --sky: #9cc0d4; --blush: #c99a88; --plum: #b798ae;
+  --glow-a: #3a2c22; --glow-b: #221e1a;
+}
+@theme inline {
+  --color-bg: var(--bg); --color-surface: var(--surface); --color-surface-2: var(--surface-2); --color-ink: var(--ink); --color-muted: var(--muted); --color-line: var(--line);
+  --color-clay: var(--clay); --color-terra: var(--terra); --color-sage: var(--sage); --color-moss: var(--moss); --color-honey: var(--honey); --color-sky: var(--sky); --color-blush: var(--blush); --color-plum: var(--plum);
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-sans: var(--font-nunito), system-ui, sans-serif;
+}
+html { background: var(--bg); color: var(--ink); }
+body {
+  font-family: var(--font-sans);
+  background:
+    radial-gradient(1200px 600px at 100% -10%, var(--glow-a), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, var(--glow-b), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+  -webkit-tap-highlight-color: transparent;
+}
+body::before {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .35; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .38 0 0 0 0 .3 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.dark body::before { mix-blend-mode: screen; opacity: .15; }
+.font-display { font-family: var(--font-display); font-optical-sizing: auto; }
+
+@layer components {
+  .card { @apply relative rounded-[28px] bg-surface/90 p-5 ring-1 ring-line backdrop-blur-sm; box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 10px 30px -18px rgba(80,55,35,.35); }
+  .dark .card { box-shadow: 0 10px 30px -18px rgba(0,0,0,.7); }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 font-bold text-white transition active:scale-[.97]; background: linear-gradient(135deg, var(--clay), var(--terra)); box-shadow: 0 8px 20px -10px var(--terra); }
+  .btn-sage { @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 font-bold text-white transition active:scale-[.97]; background: linear-gradient(135deg, var(--sage), var(--moss)); }
+  .btn-soft { @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-surface-2 px-4 py-2.5 font-semibold text-ink ring-1 ring-line transition hover:brightness-[.98] active:scale-[.97]; }
+  .input { @apply w-full rounded-2xl bg-surface px-4 py-3 text-ink ring-1 ring-line outline-none placeholder:text-muted/70 focus:ring-2 focus:ring-clay; }
+  .chip { @apply inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-surface px-3.5 py-1.5 text-sm font-semibold text-ink/80 ring-1 ring-line transition active:scale-95; }
+  .chip-on { @apply inline-flex items-center gap-1 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-bold text-white ring-1 ring-transparent transition active:scale-95; background: linear-gradient(135deg, var(--sage), var(--moss)); }
+  .eyebrow { @apply text-[11px] font-extrabold uppercase tracking-[.16em] text-muted; }
+  .h2 { @apply font-display text-xl font-semibold; }
+}
+.no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { scrollbar-width: none; }
+@keyframes wave { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+@keyframes breathe { 0%,100% { transform: scale(.62) } 40%,55% { transform: scale(1) } }
+@keyframes floaty { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }
+.animate-wave { animation: wave 6s linear infinite; }
+.animate-floaty { animation: floaty 5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; } }
+html, body { overflow-x: clip; }
+main, main > *, .card { min-width: 0; }

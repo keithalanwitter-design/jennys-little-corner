@@ -1,4 +1,4 @@
-const C = "jlc-v2", SCOPE = self.registration.scope;
+const C = "jlc-v3", SCOPE = self.registration.scope;
 self.addEventListener("install", (e) => { self.skipWaiting(); e.waitUntil(caches.open(C).then((c) => c.addAll([SCOPE]))); });
 self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
 self.addEventListener("fetch", (e) => {

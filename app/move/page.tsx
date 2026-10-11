@@ -1,97 +1,115 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { useData, today } from "@/lib/store";
-import { H, Loading } from "@/components/ui";
-import { rebounderModes, cooldown } from "@/lib/content";
-type Mode = keyof typeof rebounderModes;
-type Seg = { label: string; sec: number; kind: "warm" | "work" | "rest" | "cool" };
+import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useData, today, addWin, weekMinutes, daysAgo } from "@/lib/store";
+import { PageHeader, Tabs, Loading, Sheet } from "@/components/ui";
+import { Icon } from "@/components/Icons";
+import { Ring } from "@/components/Brand";
+import Player from "@/components/Player";
+import { routines, mobility, type Step, type Routine } from "@/lib/content";
 
-function build(mode: Mode, minutes: number): Seg[] {
-  const m = rebounderModes[mode], segs: Seg[] = [{ label: "Warm-up: easy bounce, heels down", sec: 120, kind: "warm" }];
-  let left = minutes * 60 - 120 - 60, i = 0;
-  while (left > 0) {
-    const w = Math.min(m.work, left); segs.push({ label: m.moves[i++ % m.moves.length], sec: w, kind: "work" }); left -= w;
-    if (m.rest && left > 0) { const r = Math.min(m.rest, left); segs.push({ label: "Soft recovery bounce", sec: r, kind: "rest" }); left -= r; }
-  }
-  segs.push({ label: "Slow down: gentle bounce, deep breaths", sec: 60, kind: "warm" });
-  return segs;
-}
-const beep = () => { try { const a = new AudioContext(), o = a.createOscillator(); o.connect(a.destination); o.frequency.value = 660; o.start(); o.stop(a.currentTime + 0.15); } catch {} };
+const TABS = [{ id: "bounce", label: "Rebounder", icon: "move" }, { id: "mobility", label: "Mobility", icon: "leaf" }, { id: "log", label: "My week", icon: "calendar" }] as const;
+type Tab = (typeof TABS)[number]["id"];
+const LEVELS = ["Seedling", "Sprout", "Bloom"];
 
 export default function Move() {
   const { data, update } = useData();
-  const [mode, setMode] = useState<Mode>("gentle"), [mins, setMins] = useState(10);
-  const [segs, setSegs] = useState<Seg[] | null>(null), [idx, setIdx] = useState(0), [left, setLeft] = useState(0), [running, setRunning] = useState(false);
-  const ref = useRef<ReturnType<typeof setInterval>>(undefined);
-
-  useEffect(() => {
-    if (!running || !segs) return;
-    ref.current = setInterval(() => setLeft((l) => l - 1), 1000);
-    return () => clearInterval(ref.current);
-  }, [running, segs]);
-  useEffect(() => {
-    if (!segs || left > 0 || !running) return;
-    beep();
-    if (idx + 1 < segs.length) { setIdx(idx + 1); setLeft(segs[idx + 1].sec); }
-    else {
-      setRunning(false);
-      const done = segs.filter((s) => s.kind !== "cool").reduce((a, s) => a + s.sec, 0) / 60;
-      update((d) => ({ ...d, workouts: [...d.workouts, { date: today(), minutes: Math.round(done), mode: segs[0].kind === "cool" ? "cooldown" : mode }] }));
-      setSegs(null);
-    }
-  }, [left, segs, idx, running, mode, update]);
-
+  const [tab, setTab] = useState<Tab>("bounce");
+  const [play, setPlay] = useState<{ title: string; steps: Step[]; id: string } | null>(null);
+  const [detail, setDetail] = useState<Routine | null>(null);
   if (!data) return <Loading />;
-  const start = (s: Seg[]) => { setSegs(s); setIdx(0); setLeft(s[0].sec); setRunning(true); };
   const sg = data.profile.safeguards;
-  const weekMin = data.workouts.filter((w) => Date.now() - new Date(w.date).getTime() < 7 * 864e5).reduce((a, w) => a + w.minutes, 0);
-
-  if (segs) {
-    const s = segs[idx], total = segs.reduce((a, x) => a + x.sec, 0), done = segs.slice(0, idx).reduce((a, x) => a + x.sec, 0) + s.sec - left;
-    return (
-      <div className="flex min-h-[70dvh] flex-col items-center justify-center text-center">
-        <div className="text-sm uppercase tracking-wide opacity-60">{s.kind === "work" ? "Move" : s.kind === "rest" ? "Recover" : s.kind === "cool" ? "Cooldown" : "Ease in"} · {idx + 1}/{segs.length}</div>
-        <div className={`my-6 flex h-56 w-56 items-center justify-center rounded-full text-6xl font-bold text-white ${s.kind === "work" ? "bg-clay" : s.kind === "rest" ? "bg-sky" : "bg-sage"}`}>{Math.floor(left / 60)}:{String(left % 60).padStart(2, "0")}</div>
-        <div className="mb-2 text-xl font-semibold">{s.label}</div>
-        {segs[idx + 1] && <div className="mb-6 text-sm opacity-60">Next: {segs[idx + 1].label}</div>}
-        <div className="mb-6 h-2 w-full rounded-full bg-sand"><div className="h-2 rounded-full bg-sage" style={{ width: `${(done / total) * 100}%` }} /></div>
-        <div className="flex gap-3">
-          <button className="btn" onClick={() => setRunning(!running)}>{running ? "Pause" : "Resume"}</button>
-          <button className="btn-soft" onClick={() => { setIdx(Math.min(idx + 1, segs.length - 1)); setLeft(segs[Math.min(idx + 1, segs.length - 1)].sec); }}>Skip</button>
-          <button className="btn-soft" onClick={() => { setRunning(false); setSegs(null); }}>Stop</button>
-        </div>
-        <p className="mt-6 text-xs opacity-60">Stop if anything hurts, you feel dizzy, or you can&apos;t catch your breath.</p>
-      </div>
-    );
-  }
+  const wk = weekMinutes(data), target = data.profile.moveTargetMin ?? 150;
+  const lvl = (id: string) => data.routineLevels[id] ?? 0;
+  const done = (id: string) => data.workouts.filter((w) => w.routineId === id).length;
+  const finish = (minutes: number, feel?: number) => {
+    const p = play!; setPlay(null);
+    update((d) => {
+      let x = { ...d, workouts: [...d.workouts, { date: today(), minutes, mode: p.title, routineId: p.id, feel }] };
+      x = addWin(x, `Did ${p.title}`, "move");
+      const n = x.workouts.filter((w) => w.routineId === p.id).length;
+      if (n === 1) x = addWin(x, `First ${p.title} 🌱`, "milestone");
+      return x;
+    });
+  };
   return (
     <>
-      <H sub={`${weekMin} minutes this week. Every minute counts, and rest days count too.`}>Movement Studio 🌀</H>
-      <section className="card mb-4">
-        <h2 className="mb-2 font-semibold">Rebounder session</h2>
-        <div className="mb-3 grid grid-cols-2 gap-2">{(Object.keys(rebounderModes) as Mode[]).map((k) => (
-          <button key={k} onClick={() => setMode(k)} className={`rounded-2xl p-3 text-left text-sm ${mode === k ? "bg-sage text-white" : "bg-sand"}`}><b>{rebounderModes[k].label}</b><br />{rebounderModes[k].desc}</button>
-        ))}</div>
-        <div className="mb-3 flex gap-2">{[10, 15, 20].map((m) => <button key={m} className={`flex-1 ${mins === m ? "chip-on" : "chip"}`} onClick={() => setMins(m)}>{m} min</button>)}</div>
-        <button className="btn w-full" onClick={() => start(build(mode, mins))}>Start {mins}-minute {mode} bounce</button>
-        <ul className="mt-3 list-disc pl-5 text-xs opacity-70">
-          <li>Use a stable rebounder on a flat surface. A handlebar helps with balance.</li>
-          <li>Keep your knees soft, land through your whole foot, and keep the bounce low to start.</li>
-          {(sg.kneeCare || sg.balance) && <li><b>Gentler setup:</b> stay in Gentle mode, hold the bar, and try seated bouncing or a walk if anything twinges.</li>}
-          {sg.pregnant && <li><b>Please check with your OB or midwife</b> before rebounding.</li>}
-        </ul>
-      </section>
-      <section className="card mb-4">
-        <h2 className="mb-1 font-semibold">Knee-friendly cooldown (about 5 min)</h2>
-        <ul className="mb-3 text-sm">{cooldown.map((c) => <li key={c.name}>• {c.name} ({c.sec}s)</li>)}</ul>
-        <button className="btn-soft w-full" onClick={() => start(cooldown.map((c) => ({ label: c.name, sec: c.sec, kind: "cool" as const })))}>Start guided cooldown</button>
-      </section>
-      <section className="card text-sm">
-        <h2 className="mb-1 font-semibold">Box breathing (2 min)</h2>
-        <p className="mb-2 opacity-70">Breathe in for 4, hold for 4, out for 4, hold for 4.</p>
-        <button className="btn-soft w-full" onClick={() => start(Array.from({ length: 8 }, (_, i) => ({ label: ["Breathe in", "Hold", "Breathe out", "Hold"][i % 4], sec: 4, kind: "cool" as const })).concat(Array.from({ length: 24 }, (_, i) => ({ label: ["Breathe in", "Hold", "Breathe out", "Hold"][i % 4], sec: 4, kind: "cool" as const }))))}>Start breathing</button>
-        <p className="mt-3 text-xs opacity-60">The general guideline for adults is about 150 minutes of moderate activity a week (CDC), built up gradually. Talk with your doctor if you have pain, an injury, or a health condition.</p>
-      </section>
+      <PageHeader eyebrow="Move" title="Gentle bounce, strong body" sub="Low-impact, knee-kind movement. Rest days count too." right={
+        <Ring pct={wk / target} size={72} stroke={8} color="var(--sage)"><div className="text-center"><div className="font-display text-lg font-semibold leading-none">{wk}</div><div className="text-[9px] font-bold text-muted">MIN/WK</div></div></Ring>} />
+      <Tabs tabs={TABS} value={tab} onChange={setTab} />
+      {(sg.kneeCare || sg.balance || sg.pregnant) && (
+        <div className="card mb-4 !bg-sky/15 text-sm"><b>Your gentler setup:</b> {sg.kneeCare && "Start each routine at Seedling, and swap jumps for heel bounces. "}{sg.balance && "Use a stability bar or keep a hand on a wall. "}{sg.pregnant && "Please check with your OB or midwife before rebounding."}</div>
+      )}
+      <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        {tab === "bounce" && (
+          <div className="grid gap-3 md:grid-cols-2">
+            {routines.map((r) => { const L = r.levels[lvl(r.id)]; return (
+              <motion.button whileTap={{ scale: 0.98 }} key={r.id} onClick={() => setDetail(r)} className={`relative overflow-hidden rounded-[28px] bg-gradient-to-br ${r.color} p-5 text-left text-white shadow-[0_14px_30px_-18px_rgba(80,50,30,.7)]`}>
+                <svg className="absolute -right-8 -top-8 opacity-15" width="160" height="160" viewBox="0 0 160 160"><circle cx="80" cy="80" r="70" fill="none" stroke="#fff" strokeWidth="18" /><circle cx="80" cy="80" r="30" fill="#fff" /></svg>
+                <div className="relative flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-widest opacity-90"><span className="rounded-full bg-white/25 px-2 py-0.5">{L.label}</span>{L.minutes} min</div>
+                <div className="relative mt-3 font-display text-2xl font-semibold">{r.name}</div>
+                <div className="relative text-sm opacity-90">{r.vibe}</div>
+                <div className="relative mt-4 flex items-center justify-between"><div className="flex gap-1">{LEVELS.map((_, k) => <span key={k} className={`h-1.5 w-6 rounded-full ${k <= lvl(r.id) ? "bg-white" : "bg-white/35"}`} />)}</div><span className="text-xs font-bold opacity-90">{done(r.id)} done</span></div>
+              </motion.button>); })}
+            <div className="card text-sm md:col-span-2">
+              <h3 className="h2 mb-2">Bounce safely</h3>
+              <ul className="grid gap-x-6 gap-y-1.5 text-muted md:grid-cols-2">
+                <li>• Use a stable rebounder on a flat surface. A handlebar helps.</li><li>• Keep knees soft and land through your whole foot.</li>
+                <li>• Start low. Your feet don&apos;t need to leave the mat.</li><li>• Wear supportive shoes or grippy socks.</li>
+                <li>• Finish with the Knee-Friendly Cooldown.</li><li>• Stop if anything hurts, you feel dizzy, or notice pelvic-floor pressure.</li>
+              </ul>
+            </div>
+          </div>
+        )}
+        {tab === "mobility" && (
+          <div className="grid gap-3 md:grid-cols-2">{mobility.map((f) => (
+            <div key={f.id} className="card">
+              <div className="flex items-start justify-between"><div><div className="eyebrow">{f.focus}</div><div className="font-display text-xl font-semibold">{f.name}</div></div><span className="chip">{f.minutes} min</span></div>
+              <ol className="my-3 space-y-1 text-sm text-muted">{f.steps.map((s, k) => <li key={k}>{k + 1}. {s.name}</li>)}</ol>
+              <button className="btn-sage w-full" onClick={() => setPlay({ title: f.name, steps: f.steps, id: f.id })}><Icon name="play" size={16} /> Start guided</button>
+            </div>))}</div>
+        )}
+        {tab === "log" && <WeekLog data={data} />}
+      </motion.div>
+      <Sheet open={!!detail} onClose={() => setDetail(null)} title={detail?.name ?? ""}>
+        {detail && (<>
+          <p className="mb-3 text-muted">{detail.vibe}</p>
+          <div className="mb-4 grid grid-cols-3 gap-2">{detail.levels.map((L, k) => (
+            <button key={k} onClick={() => update((d) => ({ ...d, routineLevels: { ...d.routineLevels, [detail.id]: k } }))} className={`rounded-2xl p-3 text-center ring-1 ${lvl(detail.id) === k ? "bg-gradient-to-br from-sage to-moss text-white ring-transparent" : "bg-surface-2 ring-line"}`}>
+              <div className="text-xs font-extrabold uppercase tracking-wide">{L.label}</div><div className="font-display text-2xl font-semibold">{L.minutes}</div><div className="text-[11px] opacity-80">minutes</div></button>))}</div>
+          {done(detail.id) >= 3 && lvl(detail.id) < 2 && <p className="mb-3 rounded-2xl bg-honey/20 p-3 text-sm">You&apos;ve done this {done(detail.id)} times. Try {LEVELS[lvl(detail.id) + 1]} when it feels right, or stay put. Both are great.</p>}
+          <h3 className="mb-2 font-display text-lg font-semibold">Cue cards</h3>
+          <div className="no-scrollbar -mx-6 mb-5 flex gap-2 overflow-x-auto px-6">{[...new Map(detail.levels[lvl(detail.id)].steps.map((s) => [s.name, s])).values()].map((s) => (
+            <div key={s.name} className="w-48 shrink-0 rounded-2xl bg-surface-2/70 p-3 ring-1 ring-line"><div className="eyebrow !text-[10px]">{s.kind}</div><div className="font-semibold">{s.name}</div><div className="mt-1 text-xs text-muted">{s.cue}</div></div>))}</div>
+          <button className="btn w-full" onClick={() => { const L = detail.levels[lvl(detail.id)]; setPlay({ title: detail.name, steps: L.steps, id: detail.id }); setDetail(null); }}><Icon name="play" size={18} /> Start {detail.levels[lvl(detail.id)].minutes}-minute session</button>
+        </>)}
+      </Sheet>
+      <AnimatePresence>{play && <Player title={play.title} steps={play.steps} onClose={() => setPlay(null)} onDone={finish} />}</AnimatePresence>
     </>
+  );
+}
+
+function WeekLog({ data }: { data: NonNullable<ReturnType<typeof useData>["data"]> }) {
+  const days = Array.from({ length: 7 }, (_, i) => daysAgo(6 - i));
+  const mins = days.map((d) => data.workouts.filter((w) => w.date === d).reduce((a, w) => a + w.minutes, 0));
+  const max = Math.max(30, ...mins);
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      <section className="card">
+        <h3 className="h2 mb-4">Last 7 days</h3>
+        <div className="flex h-40 items-end gap-2">{days.map((d, i) => (
+          <div key={d} className="flex flex-1 flex-col items-center gap-1">
+            <span className="text-[10px] font-bold text-muted">{mins[i] || ""}</span>
+            <motion.div className="w-full rounded-xl bg-gradient-to-t from-moss to-sage" initial={{ height: 0 }} animate={{ height: `${(mins[i] / max) * 120 + 4}px` }} style={{ opacity: mins[i] ? 1 : 0.25 }} />
+            <span className="text-[11px] font-bold text-muted">{new Date(d + "T12:00").toLocaleDateString(undefined, { weekday: "narrow" })}</span>
+          </div>))}</div>
+        <p className="mt-3 text-xs text-muted">Adults are generally encouraged to build toward about 150 minutes of moderate activity a week (CDC). Some is better than none, and it adds up in small chunks.</p>
+      </section>
+      <section className="card">
+        <h3 className="h2 mb-2">Recent sessions</h3>
+        {data.workouts.length === 0 ? <p className="text-sm text-muted">Your sessions will show up here.</p> :
+          <ul className="divide-y divide-line">{[...data.workouts].reverse().slice(0, 8).map((w, i) => <li key={i} className="flex justify-between py-2 text-sm"><span className="font-semibold">{w.mode}</span><span className="text-muted">{w.minutes} min · {new Date(w.date + "T12:00").toLocaleDateString(undefined, { month: "short", day: "numeric" })}{w.feel ? ` · ${["😮‍💨", "🙂", "😊", "🤩"][w.feel - 1]}` : ""}</span></li>)}</ul>}
+      </section>
+    </div>
   );
 }

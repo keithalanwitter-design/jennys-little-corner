@@ -2,13 +2,17 @@
 
 A private, mobile-first wellness web app (installable PWA). There are no shame streaks, no weight-loss assumptions and no medical advice. Every goal and target is set by the user and can be changed.
 
-## Features (MVP)
-- **Onboarding** (skippable): your name, what you want help with, your own goals (pause or remove anytime), optional water/protein targets, food likes, dislikes and allergies, cooking time, optional safety toggles.
-- **Today**: +16oz water and +20g protein taps (with undo), energy and stress check-in with a gentle suggestion, goals at a glance.
-- **Kitchen Hub**: Mix & Match plate builder with "surprise me", 12 high-protein recipes by prep style, "what's in my fridge" matching (have vs need), grocery list (checked items move to your fridge). Foods you said to avoid are filtered out.
-- **Movement Studio**: rebounder interval timer (Gentle or Interval mode; 10/15/20 min) with beeps, a guided knee-friendly cooldown, box breathing, weekly minutes.
-- **Supplements**: a list you fill in yourself with times, daily check-off, info cards each with a "check with your doctor or pharmacist" note, and links to NIH ODS.
-- **Settings**: reminders using browser notifications, export and delete data.
+## Features
+- **Design:** a hand-drawn SVG brand mark and app icons (an arched window with sunrise, hills and a sprout), a time-of-day greeting scene, an animated water glass, progress rings, Fraunces + Nunito Sans fonts, a warm palette with gradients and paper grain, dark mode, framer-motion micro-animations (respecting reduced-motion), and a desktop sidebar layout.
+- **Onboarding** (5 steps, all skippable): your name, focus areas, goals in your own words, optional targets, kitchen preferences and household size, optional comfort toggles.
+- **Today:** mood check-in with tailored suggestions, energy and stress scales, +16oz water and +20g protein, weekly movement ring, quick actions, today's planned meals, supplements due, a little note.
+- **Nourish:** weekly meal planner (tap or drag to assign, auto-fill, whole week to grocery list), 44 high-protein recipes with macros, filters, sorting, favorites and scalable servings, plate builder, fridge matching with weighted scoring, batch-prep scheduler (auto servings from your plan, a step order, a consolidated shopping list), and a grocery list grouped by aisle with quantities.
+- **Move:** 5 rebounder routines × 3 levels (Seedling, Sprout, Bloom) with cue cards and a full-screen guided player, 5 mobility and stretch flows, and a 7-day log.
+- **Unwind:** breathing animation (box, 4-7-8, sigh, coherent), Me Time self-care ideas with a randomizer, sleep log and wind-down routine.
+- **Progress:** recharts trends for water, protein, movement, energy and stress, and sleep; optional private measurements.
+- **Journal & Little Wins:** prompts, three good things, a win jar, milestones that never reset.
+- **Supplements:** your own lineup grouped by morning, midday and evening, check-offs, refill countdown, info cards with a doctor/pharmacist note.
+- **Settings:** theme, optional targets, 8 reminders (browser notifications), export, import and delete.
 
 Data lives in `localStorage` (via `lib/db.ts`, a swappable adapter). `supabase/schema.sql` holds the planned Supabase schema with Row Level Security.
 
