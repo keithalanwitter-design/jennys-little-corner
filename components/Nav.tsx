@@ -3,7 +3,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 const items = [["/", "☀️", "Today"], ["/kitchen", "🥗", "Kitchen"], ["/move", "🌀", "Move"], ["/supplements", "🌿", "Supps"], ["/settings", "⚙️", "Settings"]];
 export default function Nav() {
-  const p = usePathname();
+  const p = usePathname().replace(/(.)\/$/, "$1");
+  if (p === "/onboarding") return null;
   return (
     <nav className="fixed inset-x-0 bottom-0 border-t border-sand bg-cream/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
       <ul className="mx-auto flex max-w-md justify-around py-2">

@@ -12,5 +12,5 @@ body { background: var(--color-cream); color: var(--color-ink); font-family: ui-
 .btn { @apply rounded-2xl bg-clay px-4 py-3 font-semibold text-white active:scale-95 transition; }
 .btn-soft { @apply rounded-2xl bg-sand px-4 py-2 font-medium text-ink active:scale-95 transition; }
 .input { @apply w-full rounded-xl border border-sand bg-white px-3 py-2; }
-.chip { @apply rounded-full border border-sand px-3 py-1 text-sm; }
-.chip-on { @apply rounded-full border border-sage bg-sage px-3 py-1 text-sm text-white; }
+.chip { @apply whitespace-nowrap rounded-full border border-sand px-3 py-1 text-sm; }
+.chip-on { @apply whitespace-nowrap rounded-full border border-sage bg-sage px-3 py-1 text-sm text-white; }

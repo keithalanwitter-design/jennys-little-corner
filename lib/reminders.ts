@@ -1,9 +1,10 @@
+import { BASE } from "./base";
 // MVP: local scheduling while the app is open/installed. Web Push via Supabase Edge Function later (see README).
 const KEY = "jlc-data-v1", FIRED = "jlc-fired";
 export async function notify(title: string, body: string) {
   if (typeof Notification === "undefined" || Notification.permission !== "granted") return false;
   const reg = await navigator.serviceWorker?.getRegistration();
-  if (reg) reg.showNotification(title, { body, icon: "/icon-192.png" }); else new Notification(title, { body });
+  if (reg) reg.showNotification(title, { body, icon: `${BASE}/icon-192.png` }); else new Notification(title, { body });
   return true;
 }
 export function startReminderLoop() {

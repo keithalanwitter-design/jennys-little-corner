@@ -15,11 +15,16 @@ Data lives in `localStorage` (via `lib/db.ts`, a swappable adapter). `supabase/s
 ## Run
 ```bash
 npm install
-npm run dev     # http://localhost:3000
-npm run build && npm start
+npm run dev     # http://localhost:3000/jennys-little-corner/
+npm run build   # static site in out/  (npx serve out)
 ```
 
-## Deploy (Vercel)
+## Live site
+https://keithalanwitter-design.github.io/jennys-little-corner/ (GitHub Pages, deployed by `.github/workflows/pages.yml` on every push to `main`).
+
+The app is a static export (`output: "export"`, basePath `/jennys-little-corner`). Build output goes to `out/`. For local dev the app is at http://localhost:3000/jennys-little-corner/. Set `NEXT_PUBLIC_BASE_PATH=""` to build without a base path (e.g. for Vercel).
+
+## Deploy (Vercel, alternative)
 1. Go to vercel.com, choose New Project, and import this GitHub repo. The defaults work; no env vars are needed yet.
 2. Each push to `main` redeploys automatically.
 

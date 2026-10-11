@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useData, resetCache } from "@/lib/store";
 import { db } from "@/lib/db";
+import { BASE } from "@/lib/base";
 import { notify } from "@/lib/reminders";
 import { H, Loading } from "@/components/ui";
 
@@ -35,7 +36,7 @@ export default function Settings() {
         <h2 className="font-semibold">You &amp; your data</h2>
         <Link className="btn-soft block text-center" href="/onboarding">Edit goals &amp; preferences</Link>
         <button className="btn-soft w-full" onClick={exportData}>Export my data</button>
-        <button className="btn-soft w-full text-clay" onClick={async () => { if (confirm("Delete everything on this device?")) { await db.clear(); resetCache(); location.href = "/"; } }}>Delete all my data</button>
+        <button className="btn-soft w-full text-clay" onClick={async () => { if (confirm("Delete everything on this device?")) { await db.clear(); resetCache(); location.href = `${BASE}/`; } }}>Delete all my data</button>
         <p className="text-xs opacity-60">Everything stays on this device. Nothing is shared with anyone.</p>
       </section>
     </>

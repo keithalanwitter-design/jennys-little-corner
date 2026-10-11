@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { BASE } from "@/lib/base";
 import Nav from "@/components/Nav";
 import SW from "@/components/SW";
 
@@ -7,7 +8,8 @@ export const metadata: Metadata = {
   title: "Jenny's Little Corner",
   description: "A little space just for you.",
   appleWebApp: { capable: true, title: "Little Corner", statusBarStyle: "default" },
-  icons: { icon: "/icon.svg", apple: "/apple-touch-icon.png" },
+  manifest: `${BASE}/manifest.webmanifest`,
+  icons: { icon: `${BASE}/icon.svg`, apple: `${BASE}/apple-touch-icon.png` },
 };
 export const viewport: Viewport = { themeColor: "#fbf6ef", width: "device-width", initialScale: 1 };
 
