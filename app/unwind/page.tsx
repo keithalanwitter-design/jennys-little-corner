@@ -1,4 +1,6 @@
 "use client";
+import CoachChips from "@/components/CoachChips";
+import { useHashTab } from "@/lib/useHashTab";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useData, getLog, setLog, today, addWin, daysAgo } from "@/lib/store";
@@ -12,11 +14,12 @@ type Tab = (typeof TABS)[number]["id"];
 
 export default function Unwind() {
   const { data, update } = useData();
-  const [tab, setTab] = useState<Tab>("breathe");
+  const [tab, setTab] = useHashTab<Tab>("breathe", TABS);
   if (!data) return <Loading />;
   return (
     <>
       <PageHeader eyebrow="Unwind" title="Soften the edges" sub="Breathe, recharge and wind down. A rest day is a good day." />
+      <CoachChips page="unwind" />
       <Tabs tabs={TABS} value={tab} onChange={setTab} />
       <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         {tab === "breathe" && <Breathe onDone={(n) => update((d) => addWin(d, `Took ${n} mindful minutes`, "calm"))} />}

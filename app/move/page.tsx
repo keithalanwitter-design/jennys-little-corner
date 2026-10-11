@@ -1,8 +1,11 @@
 "use client";
+import CoachChips from "@/components/CoachChips";
+import Link from "next/link";
+import { useHashTab } from "@/lib/useHashTab";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useData, today, addWin, weekMinutes, daysAgo } from "@/lib/store";
-import { PageHeader, Tabs, Loading, Sheet } from "@/components/ui";
+import { PageHeader, Tabs, Loading, Sheet , Empty } from "@/components/ui";
 import { Icon } from "@/components/Icons";
 import { Ring } from "@/components/Brand";
 import Player from "@/components/Player";
@@ -14,7 +17,7 @@ const LEVELS = ["Seedling", "Sprout", "Bloom"];
 
 export default function Move() {
   const { data, update } = useData();
-  const [tab, setTab] = useState<Tab>("bounce");
+  const [tab, setTab] = useHashTab<Tab>("bounce", TABS);
   const [play, setPlay] = useState<{ title: string; steps: Step[]; id: string } | null>(null);
   const [detail, setDetail] = useState<Routine | null>(null);
   if (!data) return <Loading />;
@@ -36,6 +39,7 @@ export default function Move() {
     <>
       <PageHeader eyebrow="Move" title="Gentle bounce, strong body" sub="Low-impact, knee-kind movement. Rest days count too." right={
         <Ring pct={wk / target} size={72} stroke={8} color="var(--sage)"><div className="text-center"><div className="font-display text-lg font-semibold leading-none">{wk}</div><div className="text-[9px] font-bold text-muted">MIN/WK</div></div></Ring>} />
+      <CoachChips page="move" />
       <Tabs tabs={TABS} value={tab} onChange={setTab} />
       {(sg.kneeCare || sg.balance || sg.pregnant) && (
         <div className="card mb-4 !bg-sky/15 text-sm"><b>Your gentler setup:</b> {sg.kneeCare && "Start each routine at Seedling, and swap jumps for heel bounces. "}{sg.balance && "Use a stability bar or keep a hand on a wall. "}{sg.pregnant && "Please check with your OB or midwife before rebounding."}</div>
@@ -107,7 +111,7 @@ function WeekLog({ data }: { data: NonNullable<ReturnType<typeof useData>["data"
       </section>
       <section className="card">
         <h3 className="h2 mb-2">Recent sessions</h3>
-        {data.workouts.length === 0 ? <p className="text-sm text-muted">Your sessions will show up here.</p> :
+        {data.workouts.length === 0 ? <Empty text="Your sessions will show up here. Five minutes is a perfect first one."><Link href="/move#bounce" className="btn">Start a gentle bounce</Link></Empty> :
           <ul className="divide-y divide-line">{[...data.workouts].reverse().slice(0, 8).map((w, i) => <li key={i} className="flex justify-between py-2 text-sm"><span className="font-semibold">{w.mode}</span><span className="text-muted">{w.minutes} min · {new Date(w.date + "T12:00").toLocaleDateString(undefined, { month: "short", day: "numeric" })}{w.feel ? ` · ${["😮‍💨", "🙂", "😊", "🤩"][w.feel - 1]}` : ""}</span></li>)}</ul>}
       </section>
     </div>

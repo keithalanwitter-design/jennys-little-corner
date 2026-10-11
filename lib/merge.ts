@@ -40,6 +40,9 @@ export function mergeData(local: AppData, remote: AppData): AppData {
     favorites: uni(local.favorites, remote.favorites), pantry: uni(local.pantry, remote.pantry),
     selfCareFavs: uni(local.selfCareFavs, remote.selfCareFavs), customSelfCare: uni(local.customSelfCare, remote.customSelfCare),
     nextDone: dictUni(local.nextDone, remote.nextDone), nextSkips: dictUni(local.nextSkips, remote.nextSkips),
+    nextSnooze: { ...(remoteNewer ? local.nextSnooze : remote.nextSnooze), ...(remoteNewer ? remote.nextSnooze : local.nextSnooze) },
+    events: byKey(local.events, remote.events, id, remoteNewer).sort((a, b) => a.at.localeCompare(b.at)).slice(-300),
+    tourDone: local.tourDone || remote.tourDone,
     updatedAt: new Date().toISOString(),
   };
 }

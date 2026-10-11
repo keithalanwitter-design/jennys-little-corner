@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { db } from "./db";
 import { queueSync } from "./sync";
+import { detectEvents, emitFlow } from "./bus";
 import type { AppData, DailyLog } from "./types";
 export const ymd = (d: Date) => d.toLocaleDateString("en-CA");
 export const today = () => ymd(new Date());
@@ -13,7 +14,7 @@ export const defaults: AppData = {
   goals: [], logs: {}, supplements: [], suppLogs: [], pantry: [], grocery: [], workouts: [],
   favorites: [], mealPlan: {}, journal: [], wins: [], measurements: [], prep: { recipeIds: [], servings: {}, day: "Sunday" },
   routineLevels: {}, selfCareFavs: [], customSelfCare: [],
-  meds: [], doseLogs: [], checkins: [], chat: [], nextSkips: {}, nextDone: {},
+  meds: [], doseLogs: [], checkins: [], chat: [], nextSkips: {}, nextDone: {}, nextSnooze: {}, events: [],
   reminders: [
     { id: "water-am", label: "Morning water", time: "08:00", enabled: false },
     { id: "water-mid", label: "Midday water", time: "13:00", enabled: false },
@@ -48,7 +49,8 @@ export function useData() {
     return () => { subs.delete(setData); };
   }, []);
   const update = useCallback((fn: (d: AppData) => AppData) => {
-    if (!cache) return; cache = { ...fn(cache), updatedAt: new Date().toISOString() }; db.save(cache); queueSync(cache); subs.forEach((f) => f(cache!));
+    if (!cache) return; const prev = cache; const nx = fn(cache); const evs = detectEvents(prev, nx);
+    cache = { ...nx, events: evs.length ? [...nx.events, ...evs].slice(-300) : nx.events, updatedAt: new Date().toISOString() }; db.save(cache); queueSync(cache); subs.forEach((f) => f(cache!)); evs.forEach(emitFlow);
   }, []);
   return { data, update };
 }

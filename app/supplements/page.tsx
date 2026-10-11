@@ -1,8 +1,10 @@
 "use client";
+import Link from "next/link";
+import CoachChips from "@/components/CoachChips";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useData, uid, today, addWin } from "@/lib/store";
-import { PageHeader, Loading, Sheet } from "@/components/ui";
+import { PageHeader, Loading, Sheet , Empty } from "@/components/ui";
 import { Icon } from "@/components/Icons";
 import { suppInfo, sources } from "@/lib/content";
 import type { Supplement } from "@/lib/types";
@@ -33,9 +35,10 @@ export default function Supplements() {
   return (
     <>
       <PageHeader eyebrow="Supplements" title="Your daily lineup" sub="Your list, your schedule. Tap a dose to check it off." right={<button className="btn !px-4" onClick={() => setOpen(true)}><Icon name="plus" size={18} /> Add</button>} />
+      <CoachChips page="supplements" />
       {doses.length > 0 && <div className="card mb-4 flex items-center gap-4"><div className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface-2"><motion.div className="h-full rounded-full bg-gradient-to-r from-sage to-moss" animate={{ width: `${(done / doses.length) * 100}%` }} /></div><span className="font-display text-lg font-semibold">{done}/{doses.length}</span></div>}
       <div className="grid gap-4 lg:grid-cols-3">
-        {data.supplements.length === 0 ? <div className="card text-center text-muted lg:col-span-3">Nothing added yet. Tap <b>Add</b> to build your lineup.</div> :
+        {data.supplements.length === 0 ? <Empty className="lg:col-span-3" text="Nothing added yet. Add what you take and I'll remind you at the right time."><button className="btn" onClick={() => setOpen(true)}><Icon name="plus" size={16} /> Add a supplement</button><Link href={"/coach?q=" + encodeURIComponent("Explain common supplements simply")} className="btn-soft">Learn first</Link></Empty> :
           groups.map(([g, icon, test]) => { const items = doses.filter(({ t }) => test(t)); if (!items.length) return null; return (
             <section key={g} className="card">
               <div className="mb-3 flex items-center gap-2"><span className="grid h-8 w-8 place-items-center rounded-xl bg-honey/25 text-terra"><Icon name={icon} size={16} /></span><h2 className="h2 !text-lg">{g}</h2></div>

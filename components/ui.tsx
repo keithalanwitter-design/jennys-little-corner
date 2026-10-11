@@ -1,4 +1,5 @@
 "use client";
+import { Calf } from "./Brand";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icon } from "./Icons";
 
@@ -74,4 +75,15 @@ export function Stagger({ children, className = "" }: { children: React.ReactNod
 }
 export function Item({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <motion.div className={className} variants={{ h: { opacity: 0, y: 14 }, s: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 260, damping: 26 } } }}>{children}</motion.div>;
+}
+
+/** Guiding empty state: friendly calf, one line, and a clear next action. */
+export function Empty({ text, children, className = "" }: { text: React.ReactNode; children?: React.ReactNode; className?: string }) {
+  return (
+    <div className={`card flex flex-col items-center gap-2 py-6 text-center ${className}`}>
+      <Calf size={64} />
+      <p className="max-w-xs text-sm text-muted">{text}</p>
+      {children && <div className="mt-1 flex flex-wrap justify-center gap-2">{children}</div>}
+    </div>
+  );
 }

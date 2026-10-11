@@ -18,15 +18,42 @@ function localNow(tz: string) {
   const p = Object.fromEntries(f.formatToParts(new Date()).map((x) => [x.type, x.value]));
   return { date: `${p.year}-${p.month}-${p.day}`, hm: `${p.hour}:${p.minute}`, dow: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(p.weekday) };
 }
+type Phase = "morning" | "midday" | "evening" | "winddown";
+const phaseAt = (hm: string): Phase => (hm >= "05:00" && hm < "11:00" ? "morning" : hm >= "11:00" && hm < "16:00" ? "midday" : hm >= "16:00" && hm < "20:30" ? "evening" : "winddown");
+const VOICE: Record<Phase, { hi: string; tail: string }> = {
+  morning: { hi: "Good morning ☀️", tail: "Ease into the day." }, midday: { hi: "Midday check ⛅", tail: "A little goes a long way." },
+  evening: { hi: "Evening 🌇", tail: "Softly does it." }, winddown: { hi: "Winding down 🌙", tail: "Then rest. You did enough." },
+};
+const QUIET_OK = new Set(["wind", "journal"]); // only these (plus doses) may ping during wind-down
 // deno-lint-ignore no-explicit-any
 function dueFor(data: any, date: string, hm: string, dow: number): Msg[] {
-  const out: Msg[] = [];
-  for (const r of data?.reminders ?? []) if (r.enabled && r.time === hm && (!r.days || r.days.includes(dow)) && !String(r.id).startsWith("supps"))
-    out.push({ key: `rem-${r.id}`, title: "Little Corner", body: r.label, kind: "reminder", url: r.id.startsWith("water") ? "" : r.id === "move" ? "move/" : r.id === "checkin" ? "checkin/" : r.id === "journal" ? "journal/" : r.id === "prep" ? "nourish/" : "unwind/" });
-  for (const m of data?.meds ?? []) if (m.active !== false && !m.asNeeded) for (const t of m.times ?? []) if (t === hm && !(data.doseLogs ?? []).some((l: { medId: string; date: string; time: string }) => l.medId === m.id && l.date === date && l.time === t))
-    out.push({ key: `med-${m.id}-${t}`, title: `Time for ${m.name}`, body: `${m.dose ?? ""}${m.withFood ? " · with food" : ""}`.trim() || "Gentle reminder 💛", kind: "med", item: m.id, time: t, url: "meds/" });
-  for (const s of data?.supplements ?? []) for (const t of s.times ?? []) if (t === hm && !(data.suppLogs ?? []).some((l: { suppId: string; date: string; time: string }) => l.suppId === s.id && l.date === date && l.time === t))
-    out.push({ key: `supp-${s.id}-${t}`, title: `${s.name}`, body: `${s.dose ?? ""}${s.withFood ? " · with food" : ""}`.trim() || "Supplement reminder 🌿", kind: "supp", item: s.id, time: t, url: "supplements/" });
+  const out: Msg[] = []; if (!data) return out;
+  const ph = phaseAt(hm), v = VOICE[ph];
+  const done = new Set<string>([...(data.nextDone?.[date] ?? []), ...(data.nextSkips?.[date] ?? [])]);
+  const log = data.logs?.[date] ?? {}; const wT = data.profile?.waterTargetOz ?? 64;
+  const [h, m] = hm.split(":").map(Number); const dayFrac = Math.min(1, Math.max(0, (h * 60 + m - 7 * 60) / (13 * 60)));
+  const skipRem = (id: string) => {
+    if (ph === "winddown" && !QUIET_OK.has(id)) return true;
+    if (id.startsWith("water")) return (log.waterOz ?? 0) >= wT * dayFrac; // already on track
+    if (id === "move") return done.has("move") || (data.workouts ?? []).some((w: { date: string }) => w.date === date);
+    if (id === "wind") return done.has("wind");
+    if (id === "checkin") return (data.checkins ?? []).some((c: { weekOf: string }) => c.weekOf === date);
+    if (id === "journal") return (data.journal ?? []).some((j: { date: string }) => j.date === date);
+    return false;
+  };
+  const copy: Record<string, string> = { "water-am": "A glass of water to wake up your body.", "water-mid": "Time for a glass of water 💧", move: "Five minutes of bouncing counts. Want a quick one?", prep: "Prep session? Two staples make the week easier.", checkin: "Your 2-minute Sunday check-in is ready.", wind: "Lights low, a stretch, a few slow breaths.", journal: "Three good things from today?" };
+  for (const r of data.reminders ?? []) if (r.enabled && r.time === hm && (!r.days || r.days.includes(dow)) && !String(r.id).startsWith("supps") && !skipRem(r.id))
+    out.push({ key: `rem-${r.id}`, title: v.hi, body: copy[r.id] ?? r.label, kind: "reminder", url: r.id.startsWith("water") ? "" : r.id === "move" ? "move/" : r.id === "checkin" ? "checkin/" : r.id === "journal" ? "journal/" : r.id === "prep" ? "nourish/#prep" : "unwind/#sleep" });
+  for (const md of data.meds ?? []) if (md.active !== false && !md.asNeeded) for (const t of md.times ?? []) if (t === hm && !done.has(`med-${md.id}-${t}`) && !(data.doseLogs ?? []).some((l: { medId: string; date: string; time: string }) => l.medId === md.id && l.date === date && l.time === t))
+    out.push({ key: `med-${md.id}-${t}`, title: `${v.hi} · ${md.name}`, body: `${md.dose ?? ""}${md.withFood ? " · with food" : ""}`.trim() || "Gentle reminder 💛", kind: "med", item: md.id, time: t, url: "meds/" });
+  for (const sp of data.supplements ?? []) for (const t of sp.times ?? []) if (t === hm && !done.has(`supp-${sp.id}-${t}`) && !(data.suppLogs ?? []).some((l: { suppId: string; date: string; time: string }) => l.suppId === sp.id && l.date === date && l.time === t))
+    out.push({ key: `supp-${sp.id}-${t}`, title: `${v.hi} · ${sp.name}`, body: `${sp.dose ?? ""}${sp.withFood ? " · with food" : ""}`.trim() || "Supplement time 🌿", kind: "supp", item: sp.id, time: t, url: "supplements/" });
+  // "Later" in the app = soft snooze; resurface kindly at the chosen time if still not done.
+  for (const [key, until] of Object.entries(data.nextSnooze?.[date] ?? {})) if (until === hm && !done.has(key) && (ph !== "winddown" || key.startsWith("med") || key === "wind")) {
+    const [kind, item, time] = key.split("-");
+    const label = kind === "med" ? data.meds?.find((x: { id: string }) => x.id === item)?.name : kind === "supp" ? data.supplements?.find((x: { id: string }) => x.id === item)?.name : kind === "water" ? "a glass of water" : kind === "meal" ? `your ${item}` : kind === "move" ? "a little movement" : kind === "wind" ? "winding down" : key;
+    out.push({ key: `later-${key}`, title: "Back again, no rush 💛", body: `Whenever you're ready: ${label}. ${v.tail}`, kind: kind === "med" || kind === "supp" ? kind : "reminder", item: kind === "med" || kind === "supp" ? item : undefined, time, url: kind === "med" ? "meds/" : "" });
+  }
   return out;
 }
 async function send(sub: Sub, m: Msg, date: string) {

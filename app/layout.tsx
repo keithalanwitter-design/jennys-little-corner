@@ -6,6 +6,7 @@ import Nav from "@/components/Nav";
 import SW from "@/components/SW";
 import Theme from "@/components/Theme";
 import SyncBoot from "@/components/SyncBoot";
+import Toaster from "@/components/Toaster";
 
 const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-fraunces", axes: ["SOFT", "opsz"] });
 const nunito = Nunito_Sans({ subsets: ["latin"], variable: "--font-nunito" });
@@ -30,7 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Nav />
           <main className="mx-auto w-full max-w-md px-4 pb-32 pt-[max(env(safe-area-inset-top),1.25rem)] md:max-w-2xl lg:max-w-5xl lg:px-10 lg:pb-12 lg:pt-10">{children}</main>
         </div>
-        <SW /><Theme /><SyncBoot />
+        <SW /><Theme /><SyncBoot /><Toaster />
       </body>
     </html>
   );

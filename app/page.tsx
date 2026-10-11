@@ -9,25 +9,26 @@ import { Loading, Stagger, Item, Scale } from "@/components/ui";
 import { moods } from "@/lib/content";
 import { recipes } from "@/lib/recipes";
 import NextStep from "@/components/NextStep";
+import DayRecap from "@/components/DayRecap";
+import Tour from "@/components/Tour";
+import CoachChips from "@/components/CoachChips";
+import { PHASES, phaseAt, scenePhase, sundayPlan, type Phase as DayPhase } from "@/lib/flow";
 
-type Phase = "morning" | "afternoon" | "evening" | "night";
-const phaseOf = (h: number): Phase => (h < 5 ? "night" : h < 12 ? "morning" : h < 17 ? "afternoon" : h < 21 ? "evening" : "night");
-const greet = { morning: "Good morning", afternoon: "Good afternoon", evening: "Good evening", night: "Hello, night owl" };
 const notes = ["Rest is productive too.", "You're allowed to take up space.", "Small and steady still gets there.", "Drink some water and unclench your jaw. 💛", "You're doing better than you think."];
 const suggestions: Record<string, { t: string; href: string; icon: string }[]> = {
-  drained: [{ t: "5-minute Calm Circulation bounce", href: "/move", icon: "move" }, { t: "4-7-8 breathing, 2 minutes", href: "/unwind", icon: "moon" }, { t: "Pick a 5-minute Jenny Time idea", href: "/unwind", icon: "heart" }],
-  busy: [{ t: "Grab a 5-minute breakfast", href: "/nourish", icon: "nourish" }, { t: "Back & Shoulder Melt", href: "/move", icon: "leaf" }, { t: "Ask for a hand with dinner", href: "/unwind", icon: "heart" }],
-  okay: [{ t: "10-minute Sunrise Flow", href: "/move", icon: "move" }, { t: "Plan this week's dinners", href: "/nourish", icon: "calendar" }, { t: "Write three good things", href: "/journal", icon: "journal" }],
-  good: [{ t: "15-minute Heart Glow Intervals", href: "/move", icon: "flame" }, { t: "Batch-prep for the week", href: "/nourish", icon: "pot" }, { t: "Hip Opening flow", href: "/move", icon: "leaf" }],
-  spark: [{ t: "Kitchen Dance Party", href: "/move", icon: "sparkle" }, { t: "Try a new recipe", href: "/nourish", icon: "nourish" }, { t: "Touch-Your-Toes Journey", href: "/move", icon: "leaf" }],
+  drained: [{ t: "5-minute Calm Circulation bounce", href: "/move#bounce", icon: "move" }, { t: "4-7-8 breathing, 2 minutes", href: "/unwind#breathe", icon: "moon" }, { t: "Pick a 5-minute Jenny Time idea", href: "/unwind#jenny", icon: "heart" }],
+  busy: [{ t: "Grab a 5-minute breakfast", href: "/nourish#recipes", icon: "nourish" }, { t: "Back & Shoulder Melt", href: "/move#mobility", icon: "leaf" }, { t: "Ask for a hand with dinner", href: "/unwind#jenny", icon: "heart" }],
+  okay: [{ t: "10-minute Sunrise Flow", href: "/move#bounce", icon: "move" }, { t: "Plan this week's dinners", href: "/nourish#plan", icon: "calendar" }, { t: "Write three good things", href: "/journal", icon: "journal" }],
+  good: [{ t: "15-minute Heart Glow Intervals", href: "/move#bounce", icon: "flame" }, { t: "Batch-prep for the week", href: "/nourish#prep", icon: "pot" }, { t: "Hip Opening flow", href: "/move#mobility", icon: "leaf" }],
+  spark: [{ t: "Kitchen Dance Party", href: "/move#bounce", icon: "sparkle" }, { t: "Try a new recipe", href: "/nourish#recipes", icon: "nourish" }, { t: "Touch-Your-Toes Journey", href: "/move#mobility", icon: "leaf" }],
 };
 
 export default function Today() {
   const { data, update } = useData();
-  const [hour, setHour] = useState(9);
-  useEffect(() => setHour(new Date().getHours()), []);
+  const [dp, setDp] = useState<DayPhase>("morning");
+  useEffect(() => { const f = () => setDp(phaseAt(new Date().toTimeString().slice(0, 5))); f(); const i = setInterval(f, 60000); return () => clearInterval(i); }, []);
   if (!data) return <Loading />;
-  const p = data.profile, log = getLog(data), phase = phaseOf(hour);
+  const p = data.profile, log = getLog(data), phase = scenePhase[dp], sp = sundayPlan(data);
   const wTarget = p.waterTargetOz ?? 80, pTarget = p.proteinTargetG ?? 100, mTarget = p.moveTargetMin ?? 150;
   const wk = weekMinutes(data);
   const mood = moods.find((m) => m.id === log.mood);
@@ -48,13 +49,17 @@ export default function Today() {
           <Scene phase={phase} />
           <div className={`relative p-6 ${phase === "night" ? "text-white" : "text-[#3b332c]"}`}>
             <div className="eyebrow !text-current opacity-70">{new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}</div>
-            <h1 className="mt-1 font-display text-[34px] font-semibold leading-[1.05] tracking-tight">{greet[phase]}{p.name ? `, ${p.name}` : ""}.</h1>
-            <p className="mt-2 max-w-[18rem] text-[15px] font-medium opacity-80">{mood ? mood.msg : "Your day doesn't have to be perfect. Find one little thing that feels right."}</p>
+            <h1 className="mt-1 font-display text-[34px] font-semibold leading-[1.05] tracking-tight">{PHASES[dp].greet}{p.name ? `, ${p.name}` : ""}.</h1>
+            <p className="mt-2 max-w-[18rem] text-[15px] font-medium opacity-80">{mood ? mood.msg : PHASES[dp].sub}</p>
           </div>
         </section>
       </Item>
 
+      {(dp === "winddown" || (dp === "evening" && new Date().getHours() >= 18)) && <Item><DayRecap /></Item>}
       <Item><NextStep /></Item>
+      {sp?.tweak && sp.tweak !== "Keep everything as is" && <Item><Link href="/checkin" className="flex items-center gap-2 rounded-2xl bg-plum/10 px-4 py-2.5 text-sm"><span>🌱</span><span className="min-w-0 flex-1 truncate"><b>From your Sunday plan:</b> {sp.tweak}</span></Link></Item>}
+      <Item><CoachChips page="today" /></Item>
+      <Tour />
 
       {new Date().getDay() === 0 && !data.checkins.some((c) => c.weekOf === today()) && (
         <Item><Link href="/checkin" className="card flex items-center gap-4 !bg-gradient-to-br from-plum/25 to-clay/20">
@@ -79,7 +84,7 @@ export default function Today() {
               <span className="text-2xl">{m.emoji}</span>{m.label}</motion.button>
           ))}</div>
           <div className="mt-4 grid gap-x-6 md:grid-cols-2">
-            <Scale label="Energy" value={hour < 15 ? log.energyAm : log.energyPm} onChange={(n) => update((d) => setLog(d, hour < 15 ? { energyAm: n } : { energyPm: n }))} low="running on empty" high="bright" />
+            <Scale label="Energy" value={(dp === "morning" || dp === "midday") ? log.energyAm : log.energyPm} onChange={(n) => update((d) => setLog(d, (dp === "morning" || dp === "midday") ? { energyAm: n } : { energyPm: n }))} low="running on empty" high="bright" />
             <Scale label="Stress" value={log.stress} onChange={(n) => update((d) => setLog(d, { stress: n }))} low="calm" high="a lot" colors={["var(--sage)", "var(--sage)", "var(--honey)", "var(--clay)", "var(--plum)"]} />
           </div>
         </section>

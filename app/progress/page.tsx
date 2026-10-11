@@ -1,4 +1,5 @@
 "use client";
+import CoachChips from "@/components/CoachChips";
 import { useState } from "react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, Line, AreaChart, Area, CartesianGrid, ReferenceLine } from "recharts";
 import { useData, daysAgo, today } from "@/lib/store";
@@ -29,6 +30,7 @@ export default function Progress() {
     <>
       <PageHeader eyebrow="Progress" title="Your gentle trends" sub="Patterns, not grades. Look when it helps, ignore it when it doesn't." right={
         <div className="flex rounded-full bg-surface-2 p-1 ring-1 ring-line">{[7, 30].map((r) => <button key={r} onClick={() => setRange(r)} className={`rounded-full px-3 py-1.5 text-sm font-bold ${range === r ? "bg-surface shadow-sm" : "text-muted"}`}>{r}d</button>)}</div>} />
+      <CoachChips page="progress" />
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Avg water" value={avg("water")} unit="oz" icon="drop" tint="linear-gradient(135deg,#8fb2c6,#5e93b0)" />
         <Stat label="Avg protein" value={avg("protein")} unit="g" icon="flame" tint="linear-gradient(135deg,var(--clay),var(--terra))" />

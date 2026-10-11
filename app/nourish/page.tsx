@@ -1,8 +1,11 @@
 "use client";
+import CoachChips from "@/components/CoachChips";
+import Link from "next/link";
+import { useHashTab } from "@/lib/useHashTab";
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useData, uid, ymd } from "@/lib/store";
-import { PageHeader, Tabs, Sheet, Loading } from "@/components/ui";
+import { PageHeader, Tabs, Sheet, Loading , Empty } from "@/components/ui";
 import { Icon } from "@/components/Icons";
 import { recipes, consolidate, aisleOf, fmtQty, type Recipe } from "@/lib/recipes";
 import { proteins, produce, carbsFats, sauces, proteinEst } from "@/lib/content";
@@ -22,7 +25,7 @@ function useAvoid(data: AppData | null) {
 
 export default function Nourish() {
   const { data, update } = useData();
-  const [tab, setTab] = useState<Tab>("plan");
+  const [tab, setTab] = useHashTab<Tab>("plan", TABS);
   const [open, setOpen] = useState<Recipe | null>(null);
   const avoid = useAvoid(data);
   if (!data) return <Loading />;
@@ -39,6 +42,7 @@ export default function Nourish() {
   return (
     <>
       <PageHeader eyebrow="Nourish" title="Good food, less thinking" sub="Protein-forward and flexible. No food is good or bad here." />
+      <CoachChips page="nourish" />
       <Tabs tabs={TABS} value={tab} onChange={setTab} />
       <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         {tab === "plan" && <Planner {...props} />}
@@ -224,7 +228,7 @@ function Fridge({ data, update, pool, fav, toggleFav, setOpen, toGrocery }: P) {
         <div className="mt-3 border-t border-line pt-3"><div className="eyebrow mb-2">Quick add</div><div className="flex flex-wrap gap-1.5">{quick.filter((q) => !data.pantry.includes(q)).map((q) => <button key={q} className="chip !text-xs" onClick={() => add(q)}>+ {q}</button>)}</div></div>
       </section>
       <section className="space-y-3">
-        {data.pantry.length === 0 ? <div className="card text-center text-muted">Add a few items to see matches ✨</div> :
+        {data.pantry.length === 0 ? <Empty text="Add a few things from your fridge above to see what you can make ✨"><Link href={"/coach?q=" + encodeURIComponent("What can I make from my fridge?")} className="btn-soft">Ask coach instead</Link></Empty> :
           matches.slice(0, 10).map(({ r, score, have, need }) => (
             <RecipeRow key={r.id} r={r} fav={fav(r.id)} toggleFav={() => toggleFav(r.id)} onClick={() => setOpen(r)} extra={
               <div className="mt-2">
@@ -301,7 +305,7 @@ function Grocery({ data, update }: P) {
       <form className="mb-4 flex gap-2" onSubmit={(e) => { e.preventDefault(); if (item.trim()) update((d) => ({ ...d, grocery: [...d.grocery, { id: uid(), name: item.trim(), aisle: aisleOf(item), checked: false }] })); setItem(""); }}>
         <input className="input" value={item} onChange={(e) => setItem(e.target.value)} placeholder="Add an item" /><button className="btn !px-4" aria-label="add"><Icon name="plus" /></button>
       </form>
-      {data.grocery.length === 0 ? <div className="card text-center text-muted">Your list is empty. Add from the week plan, a prep session or any recipe.</div> : (
+      {data.grocery.length === 0 ? <Empty text="Your list is empty. Plan a few meals and I'll gather what you need."><Link href="/nourish#plan" className="btn">Plan my week</Link><Link href="/nourish#recipes" className="btn-soft">Browse recipes</Link></Empty> : (
         <>
           <div className="mb-3 flex items-center justify-between text-sm"><span className="font-bold">{left} to get</span>
             <div className="flex gap-2">{data.grocery.some((g) => g.checked) && <button className="chip" onClick={() => update((d) => ({ ...d, pantry: [...new Set([...d.pantry, ...d.grocery.filter((g) => g.checked).map((g) => norm(g.name))])], grocery: d.grocery.filter((g) => !g.checked) }))}><Icon name="fridge" size={14} /> Checked → fridge</button>}

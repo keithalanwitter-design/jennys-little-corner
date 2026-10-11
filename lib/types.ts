@@ -21,11 +21,12 @@ export type PrepPlan = { recipeIds: string[]; servings: Record<string, number>; 
 export type Med = { id: string; name: string; dose: string; times: string[]; withFood: boolean; notes?: string; stock?: number; perDose?: number; prescriber?: string; asNeeded?: boolean; active: boolean; createdAt?: string };
 export type DoseLog = { id: string; date: string; medId: string; time: string; status: "taken" | "skipped"; at: string; source?: "app" | "push" };
 export type CheckIn = { id: string; weekOf: string; wentWell: string[]; hard: string[]; note?: string; tweak?: string; applied?: string[]; at: string };
-export type ChatMsg = { id: string; role: "user" | "assistant"; text: string; at: string; actions?: { label: string; kind: "grocery" | "plan"; payload: string[] }[] };
+export type ChatMsg = { id: string; role: "user" | "assistant"; text: string; at: string; actions?: { label: string; kind: "grocery" | "plan" | "link"; payload: string[] }[] };
+export type FlowEvent = { id: string; date: string; at: string; type: "water" | "protein" | "meal" | "move" | "cooldown" | "dose" | "supp" | "mood" | "sleep" | "journal" | "checkin" | "wind" | "win"; label?: string; value?: number; ref?: string };
 export type AppData = {
   profile: Profile; goals: Goal[]; logs: Record<string, DailyLog>; supplements: Supplement[]; suppLogs: SuppLog[];
   pantry: string[]; grocery: GroceryItem[]; reminders: Reminder[]; workouts: WorkoutLog[];
   favorites: string[]; mealPlan: MealPlan; journal: JournalEntry[]; wins: Win[]; measurements: Measurement[];
-  meds: Med[]; doseLogs: DoseLog[]; checkins: CheckIn[]; chat: ChatMsg[]; nextSkips: Record<string, string[]>; nextDone: Record<string, string[]>; updatedAt?: string;
+  meds: Med[]; doseLogs: DoseLog[]; checkins: CheckIn[]; chat: ChatMsg[]; nextSkips: Record<string, string[]>; nextDone: Record<string, string[]>; nextSnooze: Record<string, Record<string, string>>; events: FlowEvent[]; tourDone?: boolean; updatedAt?: string;
   prep: PrepPlan; routineLevels: Record<string, number>; selfCareFavs: string[]; customSelfCare: string[];
 };

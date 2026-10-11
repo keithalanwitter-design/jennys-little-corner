@@ -45,7 +45,7 @@ npx supabase@latest login                       # opens a browser, or paste an a
 npx supabase@latest link --project-ref <PROJECT_REF>   # enter the DB password
 npx supabase@latest db push                     # runs supabase/migrations/20261011000001_schema.sql
 ```
-This creates all tables (profiles, daily logs for water/protein/mood/sleep, goals, supplements, medications, doses, meals, movement, journal, check-ins, reminders, push subscriptions) with **Row Level Security** so each user can only read their own rows.
+This creates all tables (plus, from `20261011000003_flow.sql`, `flow_events` and `day_state` for the daily flow) (profiles, daily logs for water/protein/mood/sleep, goals, supplements, medications, doses, meals, movement, journal, check-ins, reminders, push subscriptions) with **Row Level Security** so each user can only read their own rows.
 
 > `db push` also tries the second migration (cron). If it errors because the Vault secrets don't exist yet, do step 5 and run `db push` again.
 

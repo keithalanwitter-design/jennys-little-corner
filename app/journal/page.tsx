@@ -1,4 +1,6 @@
 "use client";
+import CoachChips from "@/components/CoachChips";
+import { useHashTab } from "@/lib/useHashTab";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useData, today, uid, addWin } from "@/lib/store";
@@ -14,7 +16,7 @@ const quickWins = ["Took a walk", "Drank my water", "Rested without guilt", "Tri
 
 export default function Journal() {
   const { data, update } = useData();
-  const [tab, setTab] = useState<Tab>("write");
+  const [tab, setTab] = useHashTab<Tab>("write", TABS);
   const [text, setText] = useState(""), [g, setG] = useState(["", "", ""]), [mood, setMood] = useState<string>(), [win, setWin] = useState("");
   if (!data) return <Loading />;
   const prompt = prompts[new Date().getDate() % prompts.length];
@@ -37,6 +39,7 @@ export default function Journal() {
   return (
     <>
       <PageHeader eyebrow="Journal & Wins" title="Notice the good" sub="Private, kind, no pressure. Gaps are totally fine." />
+      <CoachChips page="journal" />
       <Tabs tabs={TABS} value={tab} onChange={setTab} />
       <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         {tab === "write" ? (

@@ -1,8 +1,11 @@
 "use client";
+import CoachChips from "@/components/CoachChips";
+import { useHashTab } from "@/lib/useHashTab";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useData, uid, today, daysAgo, addWin } from "@/lib/store";
-import { PageHeader, Loading, Sheet, Tabs } from "@/components/ui";
+import { PageHeader, Loading, Sheet, Tabs, Empty } from "@/components/ui";
+import Link from "next/link";
 import { Icon } from "@/components/Icons";
 import { doseState, logDose, undoDose, daysLeft, adherence, nowMin, type DoseState } from "@/lib/meds";
 import type { Med } from "@/lib/types";
@@ -15,7 +18,7 @@ const fmt = (hm: string) => new Date(`2000-01-01T${hm}`).toLocaleTimeString(unde
 
 export default function Meds() {
   const { data, update } = useData();
-  const [tab, setTab] = useState<Tab>("today"); const [open, setOpen] = useState<Med | "new" | null>(null); const [f, setF] = useState(blank);
+  const [tab, setTab] = useHashTab<Tab>("today", TABS); const [open, setOpen] = useState<Med | "new" | null>(null); const [f, setF] = useState(blank);
   const [now, setNow] = useState(0); useEffect(() => { setNow(nowMin()); const i = setInterval(() => setNow(nowMin()), 60000); return () => clearInterval(i); }, []);
   if (!data) return <Loading />;
   const active = data.meds.filter((m) => m.active);
@@ -28,10 +31,11 @@ export default function Meds() {
   return (
     <>
       <PageHeader eyebrow="Medications" title="Meds, kindly kept" sub="Your schedule, your instructions. Gentle nudges, never guilt." right={<button className="btn !px-4" onClick={() => { setF(blank); setOpen("new"); }}><Icon name="plus" size={18} /> Add</button>} />
+      <CoachChips page="meds" />
       <Tabs tabs={TABS} value={tab} onChange={setTab} />
       <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         {tab === "today" && (<div className="space-y-3">
-          {active.length === 0 && <div className="card text-center text-muted">No medications added. Tap <b>Add</b> to set up a schedule. Vitamins live in <b>Supplements</b>.</div>}
+          {active.length === 0 && <Empty text={<>No medications yet. Add one and I&apos;ll fit it into your day. Vitamins live in <b>Supplements</b>.</>}><button className="btn" onClick={() => { setF(blank); setOpen("new"); }}><Icon name="plus" size={16} /> Add a medication</button><Link href="/supplements" className="btn-soft">Supplements</Link></Empty>}
           {anyMissed && <div className="card !bg-plum/10 text-sm"><b>Missed or late doses happen.</b> Check your label or ask your pharmacist whether to take it now or skip it. Please don&apos;t double up unless you&apos;ve been told to.</div>}
           {doses.map(({ m, t, s }) => (
             <motion.div layout key={m.id + t} className={`card flex items-center gap-3 p-4 ${s === "due" ? "ring-2 !ring-honey" : ""}`}>
@@ -57,7 +61,7 @@ export default function Meds() {
                 <button className="chip !text-xs" onClick={() => update((d) => ({ ...d, meds: d.meds.map((x) => (x.id === m.id ? { ...x, active: !x.active } : x)) }))}>{m.active ? "Pause" : "Resume"}</button>
               </div>
             </div>); })}
-          {data.meds.length === 0 && <div className="card text-center text-muted md:col-span-2">Nothing yet.</div>}
+          {data.meds.length === 0 && <Empty className="md:col-span-2" text="Nothing here yet."><button className="btn" onClick={() => { setF(blank); setOpen("new"); }}><Icon name="plus" size={16} /> Add a medication</button></Empty>}
         </div>)}
         {tab === "history" && (<div className="space-y-4">
           {adh != null && <div className="card flex items-center gap-4"><div className="font-display text-4xl font-semibold text-moss">{Math.round(adh * 100)}%</div><p className="text-sm text-muted">of scheduled doses logged as taken over the last 7 days. This is just for you, and any number is okay.</p></div>}

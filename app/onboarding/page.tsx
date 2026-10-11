@@ -21,7 +21,7 @@ export default function Onboarding() {
   const p = data.profile;
   const setP = (patch: Partial<typeof p>) => update((d) => ({ ...d, profile: { ...d.profile, ...patch } }));
   const addGoal = (title: string, target = "") => title.trim() && !data.goals.some((x) => x.title === title.trim()) && update((d) => ({ ...d, goals: [...d.goals, { id: uid(), title: title.trim(), target, category: "custom", status: "active", createdAt: new Date().toISOString() } as Goal] }));
-  const finish = () => { setP({ onboarded: true }); router.push("/"); };
+  const finish = () => { setP({ onboarded: true }); router.push("/?tour=1"); };
   const go = (n: number) => { setDir(n > step ? 1 : -1); setStep(n); };
   const body = [
     <div key="0" className="text-center">

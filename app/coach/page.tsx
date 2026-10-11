@@ -10,15 +10,18 @@ import { localReply, remoteReply, coachAvailable, pantryFrom } from "@/lib/coach
 import { aisleOf } from "@/lib/recipes";
 import { recipes } from "@/lib/recipes";
 import type { ChatMsg } from "@/lib/types";
+import { coachPrompts } from "@/components/CoachChips";
+import { useRef as useRef2 } from "react";
 
-const starters = ["What can I make from my fridge?", "High-protein breakfast ideas", "Turn that into a grocery list", "What does magnesium do?", "I'm tired. What movement?"];
 const md = (t: string) => t.split("\n").map((line, i) => <p key={i} className={line.startsWith("•") || /^\d\./.test(line) ? "pl-1" : ""} dangerouslySetInnerHTML={{ __html: line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/\*\*(.+?)\*\*/g, "<b>$1</b>") || "&nbsp;" }} />);
 
 export default function Coach() {
   const { data, update } = useData();
   const [q, setQ] = useState(""), [busy, setBusy] = useState(false), [live, setLive] = useState(false);
   const end = useRef<HTMLDivElement>(null);
+  const asked = useRef2(false); const sendRef = useRef2<(t: string) => void>(() => {});
   useEffect(() => { coachAvailable().then(setLive); }, []);
+  useEffect(() => { if (!data || asked.current) return; const p = new URLSearchParams(location.search).get("q"); if (p) { asked.current = true; history.replaceState(null, "", location.pathname); sendRef.current(p); } });
   useEffect(() => { end.current?.scrollIntoView({ behavior: "smooth" }); }, [data?.chat.length, busy]);
   if (!data) return <Loading />;
   const send = async (text: string) => {
@@ -32,7 +35,9 @@ export default function Coach() {
     await new Promise((r) => setTimeout(r, live ? 0 : 450));
     update((d) => ({ ...d, chat: [...d.chat, reply].slice(-60) })); setBusy(false);
   };
-  const act = (a: NonNullable<ChatMsg["actions"]>[number]) => update((d) => {
+  // eslint-disable-next-line react-hooks/refs -- latest send for the ?q= deep-link effect
+  sendRef.current = send;
+  const act = (a: NonNullable<ChatMsg["actions"]>[number]) => a.kind === "link" ? undefined : update((d) => {
     if (a.kind === "grocery") { const have = new Set(d.grocery.map((g) => g.name.toLowerCase())); return { ...d, grocery: [...d.grocery, ...a.payload.filter((n) => !have.has(n.toLowerCase())).map((name) => ({ id: uid(), name, aisle: aisleOf(name), checked: false }))], chat: [...d.chat, { id: uid(), role: "assistant", text: `Added ${a.payload.length} item${a.payload.length > 1 ? "s" : ""} to your grocery list 🛒`, at: new Date().toISOString() }] }; }
     const r = recipes.find((x) => x.id === a.payload[0]); if (!r) return d;
     const slot = r.style === "Breakfast" ? "breakfast" : r.style === "Snack" ? "snack" : r.style === "Lunch" ? "lunch" : "dinner";
@@ -54,7 +59,7 @@ export default function Coach() {
             <motion.div key={m.id} initial={{ opacity: 0, y: 10, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
               <div className={`max-w-[85%] space-y-1 rounded-[22px] px-4 py-3 text-[15px] leading-relaxed ${m.role === "user" ? "rounded-br-md text-white" : "rounded-bl-md bg-surface ring-1 ring-line"}`} style={m.role === "user" ? { background: "linear-gradient(135deg,var(--clay),var(--terra))" } : undefined}>
                 {md(m.text)}
-                {m.actions && <div className="flex flex-wrap gap-1.5 pt-2">{m.actions.map((a) => <button key={a.label} className="chip !text-xs" onClick={() => act(a)}><Icon name={a.kind === "grocery" ? "cart" : "calendar"} size={13} /> {a.label}</button>)}</div>}
+                {m.actions && <div className="flex flex-wrap gap-1.5 pt-2">{m.actions.map((a) => a.kind === "link" ? <Link key={a.label} href={a.payload[0]} className="chip !text-xs"><Icon name="skip" size={13} /> {a.label}</Link> : <button key={a.label} className="chip !text-xs" onClick={() => act(a)}><Icon name={a.kind === "grocery" ? "cart" : "calendar"} size={13} /> {a.label}</button>)}</div>}
               </div>
             </motion.div>))}
         </AnimatePresence>
@@ -62,7 +67,7 @@ export default function Coach() {
         <div ref={end} />
       </div>
       <div className="sticky bottom-24 mt-4 lg:bottom-4">
-        <div className="no-scrollbar -mx-4 mb-2 flex gap-1.5 overflow-x-auto px-4">{starters.map((s) => <button key={s} className="chip !text-xs" onClick={() => send(s)}>{s}</button>)}</div>
+        <div className="no-scrollbar -mx-4 mb-2 flex gap-1.5 overflow-x-auto px-4">{coachPrompts("coach", data).map((s) => <button key={s} className="chip !text-xs" onClick={() => send(s)}>{s}</button>)}</div>
         <form className="flex gap-2 rounded-[26px] bg-surface/90 p-1.5 ring-1 ring-line backdrop-blur" onSubmit={(e) => { e.preventDefault(); send(q); }}>
           <input className="flex-1 bg-transparent px-3 outline-none placeholder:text-muted/70" placeholder='Try "I have eggs, spinach and chicken"' value={q} onChange={(e) => setQ(e.target.value)} />
           <button className="btn !rounded-full !px-4 !py-2.5" aria-label="send" disabled={busy}><Icon name="skip" size={18} /></button>
